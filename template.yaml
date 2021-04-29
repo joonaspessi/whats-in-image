@@ -1,0 +1,462 @@
+Resources:
+  WhatsInImagesTable2A25ABA1:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+        - AttributeName: GSIPK1
+          AttributeType: S
+        - AttributeName: GSISK1
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1
+          KeySchema:
+            - AttributeName: GSIPK1
+              KeyType: HASH
+            - AttributeName: GSISK1
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: WhatsInImageStack/WhatsInImagesTable/Resource
+  WhatsInImagesBucketKeyE7102D4C:
+    Type: AWS::KMS::Key
+    Properties:
+      KeyPolicy:
+        Statement:
+          - Action: kms:*
+            Effect: Allow
+            Principal:
+              AWS:
+                Fn::Join:
+                  - ""
+                  - - "arn:"
+                    - Ref: AWS::Partition
+                    - ":iam::"
+                    - Ref: AWS::AccountId
+                    - :root
+            Resource: "*"
+        Version: "2012-10-17"
+      Description: Created by WhatsInImageStack/WhatsInImagesBucket
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: WhatsInImageStack/WhatsInImagesBucket/Key/Resource
+  WhatsInImagesBucketF5245105:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              KMSMasterKeyID:
+                Fn::GetAtt:
+                  - WhatsInImagesBucketKeyE7102D4C
+                  - Arn
+              SSEAlgorithm: aws:kms
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: WhatsInImageStack/WhatsInImagesBucket/Resource
+  WhatsInImagesBucketNotificationsB47BB2ED:
+    Type: Custom::S3BucketNotifications
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+          - BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691
+          - Arn
+      BucketName:
+        Ref: WhatsInImagesBucketF5245105
+      NotificationConfiguration:
+        TopicConfigurations:
+          - Events:
+              - s3:ObjectCreated:*
+            Filter:
+              Key:
+                FilterRules:
+                  - Name: prefix
+                    Value: images/
+            TopicArn:
+              Ref: WhatsInImagesTopic00F197DC
+    DependsOn:
+      - WhatsInImagesTopicPolicyF6B8ECEC
+      - WhatsInImagesTopic00F197DC
+    Metadata:
+      aws:cdk:path: WhatsInImageStack/WhatsInImagesBucket/Notifications/Resource
+  WhatsInImagesTopic00F197DC:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: Whats in Images Topic
+    Metadata:
+      aws:cdk:path: WhatsInImageStack/WhatsInImagesTopic/Resource
+  WhatsInImagesTopicPolicyF6B8ECEC:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: sns:Publish
+            Condition:
+              ArnLike:
+                aws:SourceArn:
+                  Fn::GetAtt:
+                    - WhatsInImagesBucketF5245105
+                    - Arn
+            Effect: Allow
+            Principal:
+              Service: s3.amazonaws.com
+            Resource:
+              Ref: WhatsInImagesTopic00F197DC
+            Sid: "0"
+        Version: "2012-10-17"
+      Topics:
+        - Ref: WhatsInImagesTopic00F197DC
+    Metadata:
+      aws:cdk:path: WhatsInImageStack/WhatsInImagesTopic/Policy/Resource
+  BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: WhatsInImageStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/Resource
+  BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: s3:PutBucketNotification
+            Effect: Allow
+            Resource: "*"
+        Version: "2012-10-17"
+      PolicyName: BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36
+      Roles:
+        - Ref: BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC
+    Metadata:
+      aws:cdk:path: WhatsInImageStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/DefaultPolicy/Resource
+  BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: AWS CloudFormation handler for "Custom::S3BucketNotifications" resources (@aws-cdk/aws-s3)
+      Code:
+        ZipFile: |-
+          exports.handler = (event, context) => {
+              // eslint-disable-next-line @typescript-eslint/no-require-imports, import/no-extraneous-dependencies
+              const s3 = new (require('aws-sdk').S3)();
+              // eslint-disable-next-line @typescript-eslint/no-require-imports
+              const https = require('https');
+              // eslint-disable-next-line @typescript-eslint/no-require-imports
+              const url = require('url');
+              log(JSON.stringify(event, undefined, 2));
+              const props = event.ResourceProperties;
+              if (event.RequestType === 'Delete') {
+                  props.NotificationConfiguration = {}; // this is how you clean out notifications
+              }
+              const req = {
+                  Bucket: props.BucketName,
+                  NotificationConfiguration: props.NotificationConfiguration,
+              };
+              return s3.putBucketNotificationConfiguration(req, (err, data) => {
+                  log({ err, data });
+                  if (err) {
+                      return submitResponse('FAILED', err.message + `\nMore information in CloudWatch Log Stream: ${context.logStreamName}`);
+                  }
+                  else {
+                      return submitResponse('SUCCESS');
+                  }
+              });
+              function log(obj) {
+                  console.error(event.RequestId, event.StackId, event.LogicalResourceId, obj);
+              }
+              // eslint-disable-next-line max-len
+              // adapted from https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-lambda-function-code.html#cfn-lambda-function-code-cfnresponsemodule
+              // to allow sending an error message as a reason.
+              function submitResponse(responseStatus, reason) {
+                  const responseBody = JSON.stringify({
+                      Status: responseStatus,
+                      Reason: reason || 'See the details in CloudWatch Log Stream: ' + context.logStreamName,
+                      PhysicalResourceId: event.PhysicalResourceId || event.LogicalResourceId,
+                      StackId: event.StackId,
+                      RequestId: event.RequestId,
+                      LogicalResourceId: event.LogicalResourceId,
+                      NoEcho: false,
+                  });
+                  log({ responseBody });
+                  const parsedUrl = url.parse(event.ResponseURL);
+                  const options = {
+                      hostname: parsedUrl.hostname,
+                      port: 443,
+                      path: parsedUrl.path,
+                      method: 'PUT',
+                      headers: {
+                          'content-type': '',
+                          'content-length': responseBody.length,
+                      },
+                  };
+                  const request = https.request(options, (r) => {
+                      log({ statusCode: r.statusCode, statusMessage: r.statusMessage });
+                      context.done();
+                  });
+                  request.on('error', (error) => {
+                      log({ sendError: error });
+                      context.done();
+                  });
+                  request.write(responseBody);
+                  request.end();
+              }
+          };
+      Handler: index.handler
+      Role:
+        Fn::GetAtt:
+          - BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC
+          - Arn
+      Runtime: nodejs12.x
+      Timeout: 300
+    DependsOn:
+      - BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36
+      - BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC
+    Metadata:
+      aws:cdk:path: WhatsInImageStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Resource
+  ImageCreatedQueue9124C40F:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: ImageCreatedQueue
+      VisibilityTimeout: 300
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: WhatsInImageStack/ImageCreatedQueue/Resource
+  ImageCreatedQueuePolicyC607D969:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: sqs:SendMessage
+            Condition:
+              ArnEquals:
+                aws:SourceArn:
+                  Ref: WhatsInImagesTopic00F197DC
+            Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Resource:
+              Fn::GetAtt:
+                - ImageCreatedQueue9124C40F
+                - Arn
+        Version: "2012-10-17"
+      Queues:
+        - Ref: ImageCreatedQueue9124C40F
+    Metadata:
+      aws:cdk:path: WhatsInImageStack/ImageCreatedQueue/Policy/Resource
+  ImageCreatedQueueWhatsInImageStackWhatsInImagesTopic53A103A6B20A7FB5:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: sqs
+      TopicArn:
+        Ref: WhatsInImagesTopic00F197DC
+      Endpoint:
+        Fn::GetAtt:
+          - ImageCreatedQueue9124C40F
+          - Arn
+      RawMessageDelivery: true
+    Metadata:
+      aws:cdk:path: WhatsInImageStack/ImageCreatedQueue/WhatsInImageStackWhatsInImagesTopic53A103A6/Resource
+  ImageProcessingLambdaServiceRole7E516935:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: WhatsInImageStack/ImageProcessingLambda/ServiceRole/Resource
+  ImageProcessingLambdaServiceRoleDefaultPolicyC695DB53:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - sqs:ReceiveMessage
+              - sqs:ChangeMessageVisibility
+              - sqs:GetQueueUrl
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - ImageCreatedQueue9124C40F
+                - Arn
+        Version: "2012-10-17"
+      PolicyName: ImageProcessingLambdaServiceRoleDefaultPolicyC695DB53
+      Roles:
+        - Ref: ImageProcessingLambdaServiceRole7E516935
+    Metadata:
+      aws:cdk:path: WhatsInImageStack/ImageProcessingLambda/ServiceRole/DefaultPolicy/Resource
+  ImageProcessingLambdaF658C239:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket:
+          Ref: AssetParametersaf78886d472f6cbdf86b7a396c5b5da8aceb8fa80dd979b8ed764cd5554924aaS3BucketA3940800
+        S3Key:
+          Fn::Join:
+            - ""
+            - - Fn::Select:
+                  - 0
+                  - Fn::Split:
+                      - "||"
+                      - Ref: AssetParametersaf78886d472f6cbdf86b7a396c5b5da8aceb8fa80dd979b8ed764cd5554924aaS3VersionKeyB46C0C87
+              - Fn::Select:
+                  - 1
+                  - Fn::Split:
+                      - "||"
+                      - Ref: AssetParametersaf78886d472f6cbdf86b7a396c5b5da8aceb8fa80dd979b8ed764cd5554924aaS3VersionKeyB46C0C87
+      Role:
+        Fn::GetAtt:
+          - ImageProcessingLambdaServiceRole7E516935
+          - Arn
+      Environment:
+        Variables:
+          LOG_LEVEL: INFO
+          POWERTOOLS_SERVICE_NAME: whatsInImage
+          TABLE:
+            Ref: WhatsInImagesTable2A25ABA1
+      Handler: image_processor_lambda.handler
+      Runtime: python3.8
+    DependsOn:
+      - ImageProcessingLambdaServiceRoleDefaultPolicyC695DB53
+      - ImageProcessingLambdaServiceRole7E516935
+    Metadata:
+      aws:cdk:path: WhatsInImageStack/ImageProcessingLambda/Resource
+      aws:asset:path: /Users/pessijo/dev-personal/whats-in-image/cdk.out/asset.af78886d472f6cbdf86b7a396c5b5da8aceb8fa80dd979b8ed764cd5554924aa
+      aws:asset:property: Code
+  ImageProcessingLambdaSqsEventSourceWhatsInImageStackImageCreatedQueue7C3A71284717BF57:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      FunctionName:
+        Ref: ImageProcessingLambdaF658C239
+      EventSourceArn:
+        Fn::GetAtt:
+          - ImageCreatedQueue9124C40F
+          - Arn
+    Metadata:
+      aws:cdk:path: WhatsInImageStack/ImageProcessingLambda/SqsEventSource:WhatsInImageStackImageCreatedQueue7C3A7128/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAAE2VQ207DMAz9lr2n3qZKiEdggheEVNr9QJqGEdokJRdQFeXfSZyqm8SLfXx8fGz5CMfDEQ67B/prKzaM+8C04RA6R9lIWm61N4yTk1bWGc8cOX2ojX20lrukvAh1yY2GGiq54yYXaWQQTmgVSfYOw6Ko1EMP4Uz7iWcJgkhsDeHJs5Gje0GRjNJCeOVL5lJKMpWIs54Fw1kEGBs9CbZs5Fp2vrfMiDmfkHu3dSSCSgitLndgvroUlBZ+p4XvnnsUFYDxKr0pI5mo7AdazYv71AoaTC9eMbzA1hXN77KAX1vFEJLJpnn+4cp1+Ns3Os/rV/+zMUZS7Pc13MPd7ssKURmvnJAc2pL/AHnDi5raAQAA
+    Metadata:
+      aws:cdk:path: WhatsInImageStack/CDKMetadata/Default
+    Condition: CDKMetadataAvailable
+Parameters:
+  AssetParametersaf78886d472f6cbdf86b7a396c5b5da8aceb8fa80dd979b8ed764cd5554924aaS3BucketA3940800:
+    Type: String
+    Description: S3 bucket for asset "af78886d472f6cbdf86b7a396c5b5da8aceb8fa80dd979b8ed764cd5554924aa"
+  AssetParametersaf78886d472f6cbdf86b7a396c5b5da8aceb8fa80dd979b8ed764cd5554924aaS3VersionKeyB46C0C87:
+    Type: String
+    Description: S3 key for asset version "af78886d472f6cbdf86b7a396c5b5da8aceb8fa80dd979b8ed764cd5554924aa"
+  AssetParametersaf78886d472f6cbdf86b7a396c5b5da8aceb8fa80dd979b8ed764cd5554924aaArtifactHash42A3336F:
+    Type: String
+    Description: Artifact hash for asset "af78886d472f6cbdf86b7a396c5b5da8aceb8fa80dd979b8ed764cd5554924aa"
+Conditions:
+  CDKMetadataAvailable:
+    Fn::Or:
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - af-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ca-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-northwest-1
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-3
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - me-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - sa-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-2
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-2
+
