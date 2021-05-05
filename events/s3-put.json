@@ -1,0 +1,20 @@
+{
+  "Records": [
+    {
+      "messageId": "4aa5307a-a60f-4d39-bedc-250e4c276e8b",
+      "receiptHandle": "AQEBoEHn1nA1TrTbCkfxDTJZDKPbpZyl0SrbA0WqBsV0G1RkAd9SPDn8binrbiy9qUY5AEi+EE0jz0PWBD6OzogNKsTyur2ltqTM25rWi+FVvGFAOWTZF+H/a3ZkUQq9n3qtSjo9oRA1PHEceg7zA8kR0Z1Ba8hIH7Ci7zxeY21u+Ebly+mEF651uJsa/WhZojqWW9tQfH/ZkFo8a2XnLRlyEjkM6yHYUmeL2qQY37IKXiVly/og4f+q6GZ87QQgzSIVMcmSi8TpyCL2DXZozRKOoLZlzbL7weykSrTxcba0ikswDF+taYtqifPbevR67Hl0gxfCFnq2Qpja8C8gLd9iuZ6Z8fSH0G0a+7uGImNxMste3g186deF6u4UKlDQar4kUNezIxnQkgw1YQHSHYMugg==",
+      "body": "{\"Records\":[{\"eventVersion\":\"2.1\",\"eventSource\":\"aws:s3\",\"awsRegion\":\"eu-west-1\",\"eventTime\":\"2021-04-28T16:36:41.043Z\",\"eventName\":\"ObjectCreated:Put\",\"userIdentity\":{\"principalId\":\"AWS:AIDAW5FW35B2R76I4ELFB\"},\"requestParameters\":{\"sourceIPAddress\":\"91.153.68.76\"},\"responseElements\":{\"x-amz-request-id\":\"171KGZRX45EHR6KA\",\"x-amz-id-2\":\"ZI8afvxxP36eYHNRKDayEjvkPNGvl7G96UI7/XO5izrENn7Aus6NjRyZ4/9yfHbZlI9HXP90Cx7FZB45z/dazM0dtH++hFUK\"},\"s3\":{\"s3SchemaVersion\":\"1.0\",\"configurationId\":\"YmNhNmVjOWItZDQyMC00ZDk3LTgwMTQtMDhkYTdjMWUwYzhj\",\"bucket\":{\"name\":\"whatsinimagestack-whatsinimagesbucketf5245105-nmx1ow78uj0r\",\"ownerIdentity\":{\"principalId\":\"A8NGPZONMN7H6\"},\"arn\":\"arn:aws:s3:::whatsinimagestack-whatsinimagesbucketf5245105-nmx1ow78uj0r\"},\"object\":{\"key\":\"images/bike.png\",\"size\":5,\"eTag\":\"679ca867ec092436b0cae600b6a292e2\",\"sequencer\":\"0060898F1B8B6A4A11\"}}}]}",
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1619627804644",
+        "SenderId": "AIDAISMY7JYY5F7RTT6AO",
+        "ApproximateFirstReceiveTimestamp": "1619627804654"
+      },
+      "messageAttributes": {},
+      "md5OfBody": "fb2fbd4f90d116e55f4b6be1eca13906",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:eu-west-1:474977396853:ImageCreatedQueue",
+      "awsRegion": "eu-west-1"
+    }
+  ]
+}

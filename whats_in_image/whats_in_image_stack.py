@@ -4,6 +4,7 @@
 # being updated to use `cdk`.  You may delete this import if you don't need it.
 from aws_cdk import (
     aws_dynamodb,
+    aws_iam,
     aws_lambda,
     aws_lambda_event_sources,
     aws_lambda_python,
@@ -44,7 +45,10 @@ class WhatsInImageStack(cdk.Stack):
         )
 
         image_bucket = aws_s3.Bucket(
-            self, "WhatsInImagesBucket", encryption=aws_s3.BucketEncryption.KMS
+            self,
+            "WhatsInImagesBucket",
+            encryption=aws_s3.BucketEncryption.KMS,
+            block_public_access=aws_s3.BlockPublicAccess.BLOCK_ALL,
         )
 
         topic = aws_sns.Topic(
@@ -64,12 +68,12 @@ class WhatsInImageStack(cdk.Stack):
             queue_name="ImageCreatedQueue",
         )
 
-        # created_filter = aws_sns.SubscriptionFilter.string_filter(whitelist=["created"])
+        created_filter = aws_sns.SubscriptionFilter.string_filter(whitelist=["created"])
         topic.add_subscription(
             aws_sns_subscriptions.SqsSubscription(
                 image_created_queue,
                 raw_message_delivery=True,
-                # filter_policy={"status": created_filter},
+                filter_policy={"status": created_filter},
             )
         )
 
@@ -82,11 +86,18 @@ class WhatsInImageStack(cdk.Stack):
             environment={
                 "LOG_LEVEL": "INFO",
                 "POWERTOOLS_SERVICE_NAME": "whatsInImage",
+                "POWERTOOLS_METRICS_NAMESPACE": "ImageLabeling",
                 "TABLE": table.table_name,
             },
         )
 
         image_created_queue.grant_consume_messages(image_processing_lambda)
         image_processing_lambda.add_event_source(
-            aws_lambda_event_sources.SqsEventSource(image_created_queue)
+            aws_lambda_event_sources.SqsEventSource(
+                image_created_queue,
+            )
+        )
+        table.grant_read_write_data(image_processing_lambda)
+        image_processing_lambda.add_to_role_policy(
+            aws_iam.PolicyStatement(actions=["rekognition:*"], resources=["*"])
         )

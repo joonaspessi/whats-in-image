@@ -2,7 +2,9 @@ import json
 import os
 from dataclasses import dataclass
 
+import boto3
 import pytest
+from moto import mock_s3
 
 
 @pytest.fixture()
@@ -26,8 +28,19 @@ def lambda_context():
 
 @pytest.fixture(autouse=True)
 def environment():
+    # os.environ["AWS_ACCESS_KEY_ID"] = "testing"
+    # os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
+    # os.environ["AWS_SECURITY_TOKEN"] = "testing"
+    # os.environ["AWS_SESSION_TOKEN"] = "testing"
     os.environ["POWERTOOLS_TRACE_DISABLED"] = "1"
+    os.environ["POWERTOOLS_SERVICE_NAME"] = "whats-in-image-testing"
     os.environ["TABLE"] = "WhatsInImageStack-WhatsInImagesTable2A25ABA1-1RSNFBDTYHI6Z"
+
+
+@pytest.fixture(scope="function")
+def s3(aws_credentials):
+    with mock_s3():
+        yield boto3.client("s3")
 
 
 def test_image_processor_lambda(s3_put_event, lambda_context):
