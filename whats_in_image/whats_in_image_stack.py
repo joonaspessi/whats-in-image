@@ -1,7 +1,3 @@
-# For consistency with other languages, `cdk` is the preferred import name for
-# the CDK's core module.  The following line also imports it as `core` for use
-# with examples from the CDK Developer's Guide, which are in the process of
-# being updated to use `cdk`.  You may delete this import if you don't need it.
 from aws_cdk import (
     aws_dynamodb,
     aws_iam,
@@ -52,7 +48,7 @@ class WhatsInImageStack(cdk.Stack):
         )
 
         topic = aws_sns.Topic(
-            self, "WhatsInImagesTopic", display_name="Whats in Images Topic"
+            self, "WhatsInImageTopic", display_name="Whats in Images Topic"
         )
 
         image_bucket.add_event_notification(
@@ -66,14 +62,13 @@ class WhatsInImageStack(cdk.Stack):
             "ImageCreatedQueue",
             visibility_timeout=cdk.Duration.seconds(300),
             queue_name="ImageCreatedQueue",
+            retention_period=core.Duration.hours(1),
         )
 
-        created_filter = aws_sns.SubscriptionFilter.string_filter(whitelist=["created"])
         topic.add_subscription(
             aws_sns_subscriptions.SqsSubscription(
                 image_created_queue,
                 raw_message_delivery=True,
-                filter_policy={"status": created_filter},
             )
         )
 
@@ -90,6 +85,8 @@ class WhatsInImageStack(cdk.Stack):
                 "TABLE": table.table_name,
             },
         )
+
+        image_bucket.grant_read(image_processing_lambda)
 
         image_created_queue.grant_consume_messages(image_processing_lambda)
         image_processing_lambda.add_event_source(

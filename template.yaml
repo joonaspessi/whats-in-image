@@ -92,19 +92,19 @@ Resources:
                   - Name: prefix
                     Value: images/
             TopicArn:
-              Ref: WhatsInImagesTopic00F197DC
+              Ref: WhatsInImageTopic937A5A0F
     DependsOn:
-      - WhatsInImagesTopicPolicyF6B8ECEC
-      - WhatsInImagesTopic00F197DC
+      - WhatsInImageTopicPolicyC8399277
+      - WhatsInImageTopic937A5A0F
     Metadata:
       aws:cdk:path: WhatsInImageStack/WhatsInImagesBucket/Notifications/Resource
-  WhatsInImagesTopic00F197DC:
+  WhatsInImageTopic937A5A0F:
     Type: AWS::SNS::Topic
     Properties:
       DisplayName: Whats in Images Topic
     Metadata:
-      aws:cdk:path: WhatsInImageStack/WhatsInImagesTopic/Resource
-  WhatsInImagesTopicPolicyF6B8ECEC:
+      aws:cdk:path: WhatsInImageStack/WhatsInImageTopic/Resource
+  WhatsInImageTopicPolicyC8399277:
     Type: AWS::SNS::TopicPolicy
     Properties:
       PolicyDocument:
@@ -120,13 +120,13 @@ Resources:
             Principal:
               Service: s3.amazonaws.com
             Resource:
-              Ref: WhatsInImagesTopic00F197DC
+              Ref: WhatsInImageTopic937A5A0F
             Sid: "0"
         Version: "2012-10-17"
       Topics:
-        - Ref: WhatsInImagesTopic00F197DC
+        - Ref: WhatsInImageTopic937A5A0F
     Metadata:
-      aws:cdk:path: WhatsInImageStack/WhatsInImagesTopic/Policy/Resource
+      aws:cdk:path: WhatsInImageStack/WhatsInImageTopic/Policy/Resource
   BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC:
     Type: AWS::IAM::Role
     Properties:
@@ -245,6 +245,7 @@ Resources:
   ImageCreatedQueue9124C40F:
     Type: AWS::SQS::Queue
     Properties:
+      MessageRetentionPeriod: 3600
       QueueName: ImageCreatedQueue
       VisibilityTimeout: 300
     UpdateReplacePolicy: Delete
@@ -260,7 +261,7 @@ Resources:
             Condition:
               ArnEquals:
                 aws:SourceArn:
-                  Ref: WhatsInImagesTopic00F197DC
+                  Ref: WhatsInImageTopic937A5A0F
             Effect: Allow
             Principal:
               Service: sns.amazonaws.com
@@ -273,22 +274,19 @@ Resources:
         - Ref: ImageCreatedQueue9124C40F
     Metadata:
       aws:cdk:path: WhatsInImageStack/ImageCreatedQueue/Policy/Resource
-  ImageCreatedQueueWhatsInImageStackWhatsInImagesTopic53A103A6B20A7FB5:
+  ImageCreatedQueueWhatsInImageStackWhatsInImageTopic923BCFF201BA55E1:
     Type: AWS::SNS::Subscription
     Properties:
       Protocol: sqs
       TopicArn:
-        Ref: WhatsInImagesTopic00F197DC
+        Ref: WhatsInImageTopic937A5A0F
       Endpoint:
         Fn::GetAtt:
           - ImageCreatedQueue9124C40F
           - Arn
-      FilterPolicy:
-        status:
-          - created
       RawMessageDelivery: true
     Metadata:
-      aws:cdk:path: WhatsInImageStack/ImageCreatedQueue/WhatsInImageStackWhatsInImagesTopic53A103A6/Resource
+      aws:cdk:path: WhatsInImageStack/ImageCreatedQueue/WhatsInImageStackWhatsInImageTopic923BCFF2/Resource
   ImageProcessingLambdaServiceRole7E516935:
     Type: AWS::IAM::Role
     Properties:
@@ -312,6 +310,29 @@ Resources:
     Properties:
       PolicyDocument:
         Statement:
+          - Action:
+              - s3:GetObject*
+              - s3:GetBucket*
+              - s3:List*
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - WhatsInImagesBucketF5245105
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - WhatsInImagesBucketF5245105
+                        - Arn
+                    - /*
+          - Action:
+              - kms:Decrypt
+              - kms:DescribeKey
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - WhatsInImagesBucketKeyE7102D4C
+                - Arn
           - Action:
               - sqs:ReceiveMessage
               - sqs:ChangeMessageVisibility
@@ -360,7 +381,7 @@ Resources:
     Properties:
       Code:
         S3Bucket:
-          Ref: AssetParameters26772d2cae08ae37fdb2155703e25133fd1fc03ab0f0bb56ced74317347a029fS3BucketD84C8B41
+          Ref: AssetParameters1813eebec9aea7ffbff1120e45ab716dc4c278f0f43cfa0893957cd7d529a6cbS3Bucket2D19EF8A
         S3Key:
           Fn::Join:
             - ""
@@ -368,12 +389,12 @@ Resources:
                   - 0
                   - Fn::Split:
                       - "||"
-                      - Ref: AssetParameters26772d2cae08ae37fdb2155703e25133fd1fc03ab0f0bb56ced74317347a029fS3VersionKey95C48FD3
+                      - Ref: AssetParameters1813eebec9aea7ffbff1120e45ab716dc4c278f0f43cfa0893957cd7d529a6cbS3VersionKey44C4BFD4
               - Fn::Select:
                   - 1
                   - Fn::Split:
                       - "||"
-                      - Ref: AssetParameters26772d2cae08ae37fdb2155703e25133fd1fc03ab0f0bb56ced74317347a029fS3VersionKey95C48FD3
+                      - Ref: AssetParameters1813eebec9aea7ffbff1120e45ab716dc4c278f0f43cfa0893957cd7d529a6cbS3VersionKey44C4BFD4
       Role:
         Fn::GetAtt:
           - ImageProcessingLambdaServiceRole7E516935
@@ -392,7 +413,7 @@ Resources:
       - ImageProcessingLambdaServiceRole7E516935
     Metadata:
       aws:cdk:path: WhatsInImageStack/ImageProcessingLambda/Resource
-      aws:asset:path: /Users/pessijo/dev-personal/whats-in-image/cdk.out/asset.26772d2cae08ae37fdb2155703e25133fd1fc03ab0f0bb56ced74317347a029f
+      aws:asset:path: /Users/pessijo/dev-personal/whats-in-image/cdk.out/asset.1813eebec9aea7ffbff1120e45ab716dc4c278f0f43cfa0893957cd7d529a6cb
       aws:asset:property: Code
   ImageProcessingLambdaSqsEventSourceWhatsInImageStackImageCreatedQueue7C3A71284717BF57:
     Type: AWS::Lambda::EventSourceMapping
@@ -413,15 +434,15 @@ Resources:
       aws:cdk:path: WhatsInImageStack/CDKMetadata/Default
     Condition: CDKMetadataAvailable
 Parameters:
-  AssetParameters26772d2cae08ae37fdb2155703e25133fd1fc03ab0f0bb56ced74317347a029fS3BucketD84C8B41:
+  AssetParameters1813eebec9aea7ffbff1120e45ab716dc4c278f0f43cfa0893957cd7d529a6cbS3Bucket2D19EF8A:
     Type: String
-    Description: S3 bucket for asset "26772d2cae08ae37fdb2155703e25133fd1fc03ab0f0bb56ced74317347a029f"
-  AssetParameters26772d2cae08ae37fdb2155703e25133fd1fc03ab0f0bb56ced74317347a029fS3VersionKey95C48FD3:
+    Description: S3 bucket for asset "1813eebec9aea7ffbff1120e45ab716dc4c278f0f43cfa0893957cd7d529a6cb"
+  AssetParameters1813eebec9aea7ffbff1120e45ab716dc4c278f0f43cfa0893957cd7d529a6cbS3VersionKey44C4BFD4:
     Type: String
-    Description: S3 key for asset version "26772d2cae08ae37fdb2155703e25133fd1fc03ab0f0bb56ced74317347a029f"
-  AssetParameters26772d2cae08ae37fdb2155703e25133fd1fc03ab0f0bb56ced74317347a029fArtifactHash424B8E43:
+    Description: S3 key for asset version "1813eebec9aea7ffbff1120e45ab716dc4c278f0f43cfa0893957cd7d529a6cb"
+  AssetParameters1813eebec9aea7ffbff1120e45ab716dc4c278f0f43cfa0893957cd7d529a6cbArtifactHash37A0DE27:
     Type: String
-    Description: Artifact hash for asset "26772d2cae08ae37fdb2155703e25133fd1fc03ab0f0bb56ced74317347a029f"
+    Description: Artifact hash for asset "1813eebec9aea7ffbff1120e45ab716dc4c278f0f43cfa0893957cd7d529a6cb"
 Conditions:
   CDKMetadataAvailable:
     Fn::Or:
