@@ -4,7 +4,8 @@ from dataclasses import dataclass
 
 import boto3
 import pytest
-from moto import mock_s3
+from botocore.stub import Stubber
+from moto import mock_dynamodb2, mock_s3
 
 
 @pytest.fixture()
@@ -28,22 +29,75 @@ def lambda_context():
 
 @pytest.fixture(autouse=True)
 def environment():
-    # os.environ["AWS_ACCESS_KEY_ID"] = "testing"
-    # os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
-    # os.environ["AWS_SECURITY_TOKEN"] = "testing"
-    # os.environ["AWS_SESSION_TOKEN"] = "testing"
+    os.environ["AWS_ACCESS_KEY_ID"] = "testing"
+    os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
+    os.environ["AWS_SECURITY_TOKEN"] = "testing"
+    os.environ["AWS_SESSION_TOKEN"] = "testing"
+
     os.environ["POWERTOOLS_TRACE_DISABLED"] = "1"
     os.environ["POWERTOOLS_SERVICE_NAME"] = "whats-in-image-testing"
-    os.environ["TABLE"] = "WhatsInImageStack-WhatsInImagesTable2A25ABA1-1RSNFBDTYHI6Z"
+
+    os.environ["TABLE"] = "TestTable"
+    os.environ["BUCKET"] = "TestBucket"
+    os.environ["REGION"] = "eu-west-1"
 
 
 @pytest.fixture(scope="function")
-def s3(aws_credentials):
+def s3(environment):
     with mock_s3():
-        yield boto3.client("s3")
+        yield boto3.client("s3", region_name=os.environ["REGION"])
 
 
-def test_image_processor_lambda(s3_put_event, lambda_context):
+@pytest.fixture(scope="function")
+def dynamodb(environment):
+    with mock_dynamodb2():
+        yield boto3.resource("dynamodb", region_name=os.environ["REGION"])
+
+
+@pytest.fixture(scope="function")
+def table(dynamodb):
+    table = dynamodb.create_table(
+        TableName=os.environ["TABLE"],
+        KeySchema=[
+            {"AttributeName": "PK", "KeyType": "HASH"},
+            {"AttributeName": "SK", "KeyType": "RANGE"},
+        ],
+        AttributeDefinitions=[
+            {"AttributeName": "PK", "AttributeType": "S"},
+            {"AttributeName": "SK", "AttributeType": "S"},
+        ],
+    )
+    table.meta.client.get_waiter("table_exists").wait(TableName=os.environ["TABLE"])
+
+    assert table.item_count == 0
+
+    return table
+
+
+@pytest.fixture(scope="function")
+def bucket(s3):
+    location = {"LocationConstraint": os.environ["REGION"]}
+    bucket = s3.create_bucket(
+        Bucket=os.environ["BUCKET"], CreateBucketConfiguration=location
+    )
+    s3.upload_file(
+        "./tests/assets/test_image.png", os.environ["BUCKET"], "images/test_image.png"
+    )
+    return s3
+
+
+@pytest.fixture(scope="function")
+def rekognition():
+    rekognition_client = boto3.client("rekognition")
+    rekognition_stubber = Stubber(rekognition_client)
+    rekognition_stubber.activate()
+    yield rekognition_stubber
+    rekognition_stubber.deactivate()
+
+
+def test_image_processor_lambda(
+    s3_put_event, lambda_context, bucket, table, rekognition
+):
     from image_processor_lambda import image_processor_lambda
 
     response = image_processor_lambda.handler(s3_put_event, lambda_context)

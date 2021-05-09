@@ -12,7 +12,7 @@ logger = Logger()
 metrics = Metrics()
 tracer = Tracer()
 
-dynamodb = boto3.resource("dynamodb")
+dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
 rekognition = boto3.client("rekognition", region_name="eu-west-1")
 table = dynamodb.Table(os.environ["TABLE"])
 
