@@ -1,6 +1,7 @@
 import json
 import os
 from dataclasses import dataclass
+from unittest.mock import patch
 
 import boto3
 import pytest
@@ -35,10 +36,11 @@ def environment():
     os.environ["AWS_SESSION_TOKEN"] = "testing"
 
     os.environ["POWERTOOLS_TRACE_DISABLED"] = "1"
-    os.environ["POWERTOOLS_SERVICE_NAME"] = "whats-in-image-testing"
+    os.environ["POWERTOOLS_SERVICE_NAME"] = "testing"
+    os.environ["POWERTOOLS_METRICS_NAMESPACE"] = "testing"
 
-    os.environ["TABLE"] = "TestTable"
-    os.environ["BUCKET"] = "TestBucket"
+    os.environ["TABLE"] = "testing"
+    os.environ["BUCKET"] = "testing"
     os.environ["REGION"] = "eu-west-1"
 
 
@@ -87,16 +89,16 @@ def bucket(s3):
 
 
 @pytest.fixture(scope="function")
-def rekognition():
-    rekognition_client = boto3.client("rekognition")
-    rekognition_stubber = Stubber(rekognition_client)
-    rekognition_stubber.activate()
-    yield rekognition_stubber
-    rekognition_stubber.deactivate()
+def label_mock():
+    with patch(
+        "image_processor_lambda.image_processor_lambda._detect_labels"
+    ) as mock_client:
+        mock_client.return_value = {"Labels": []}
+        yield
 
 
 def test_image_processor_lambda(
-    s3_put_event, lambda_context, bucket, table, rekognition
+    s3_put_event, lambda_context, bucket, table, label_mock
 ):
     from image_processor_lambda import image_processor_lambda
 

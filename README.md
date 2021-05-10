@@ -1,10 +1,10 @@
 # Whats In Image
 
 _Whats In Image_ is a service that labels picture content from uploaded images and
-stores recognized image labels to a database.
+stores recognized image labels to database.
 
-In addition to image labels, _Whats In Image_-service creates thumbnails from
-uploaded images and draws recognition bounding boxes to the image data.
+In addition to image labels, _Whats In Image_-service creates thumbnails for
+uploaded images and draws recognition bounding boxes.
 
 Todo example here
 
@@ -36,6 +36,36 @@ Todo how to start the development
 - [ ] CI/CD
 
 ## Log book
+
+### 2021-05-10 Continue fixing unit tests
+
+Today I will continue to setup the mock for Amazon Rekognition.
+I just didn't find reasonable way of to mock the boto3 rekognition client. The need
+would have been to mock this from the lambda code
+
+```python
+rekognition = boto3.client("rekognition")
+```
+
+Mocking this without touching other boto3 client became too complicated so I decided to
+wrap the image labeling to a function `_detect_labels` which where internally using
+Amazon Rekognition. This change made the test much more easier to mock as with this
+change it is possible just to mock return value for the `_detect_labels` function which
+was simple array. This could be done easily without any complex boto3 mocks, just Python
+builtin unittest.mock can be used
+
+```python
+@pytest.fixture(scope="function")
+def label_mock():
+    with patch(
+        "image_processor_lambda.image_processor_lambda._detect_labels"
+    ) as mock_client:
+        mock_client.return_value = {"Labels": []}
+        yield
+```
+
+I think that the unit test saga is almost completed now, still have to create checks
+that AWS Dynamodb contains a row and the content is reasonable.
 
 ### 2021-05-09 Fixing unit tests
 

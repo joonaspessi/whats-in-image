@@ -12,9 +12,19 @@ logger = Logger()
 metrics = Metrics()
 tracer = Tracer()
 
-dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
-rekognition = boto3.client("rekognition", region_name="eu-west-1")
-table = dynamodb.Table(os.environ["TABLE"])
+
+def _rekognition_client():
+    return boto3.client("rekognition", region_name="eu-west-1")
+
+
+def _dynamodb_table():
+    dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
+    table = dynamodb.Table(os.environ["TABLE"])
+    return table
+
+
+rekognition = _rekognition_client()
+table = _dynamodb_table()
 
 
 @metrics.log_metrics
@@ -30,9 +40,7 @@ def handler(event, context: LambdaContext):
             "S3Object": {"Bucket": image["bucket_name"], "Name": image["object_key"]}
         }
         try:
-            result = rekognition.detect_labels(
-                Image=params, MaxLabels=10, MinConfidence=60
-            )
+            result = _detect_labels()
         except Exception as exception:
             logger.exception("AWS rekognition raised error")
             raise exception
@@ -41,6 +49,13 @@ def handler(event, context: LambdaContext):
     _insert_to_dynamoDB(images, results, processed_at=processed_at)
     metrics.add_metric(name="ImageLabeled", unit=MetricUnit.Count, value=1)
     return images
+
+
+@tracer.capture_method
+def _detect_labels(max_labels=10, min_confidence=60):
+    labels = rekognition.detect_labels(Image=params, MaxLabels=10, MinConfidence=60)
+    logger.info(labels)
+    return labels
 
 
 @tracer.capture_method
