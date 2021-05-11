@@ -54,6 +54,18 @@ Also added Makefile for improved dev experience. I think it is good way to docum
 commands that are used during the deployment. Currently Makefile contains commands for
 creation of venv, cleaning the venv, deployment and synth.
 
+After removing the existing virualenv and trying to re-install the dependencies I end up
+having problems from pip and installation failed. This was actually resolved by upgrading
+pip. In the future it is a good practice to add upgrade pip command to the Makefile which
+should use latest pip version before installing the requirements
+
+```Makefile
+$(VENV)/bin/activate: requirements.txt
+	python -m venv ${VENV}
+	./$(VENV)/bin/python -m pip install --upgrade pip
+	./$(VENV)/bin/pip install -r requirements.txt
+```
+
 ### 2021-05-10 Continue fixing unit tests
 
 Today I will continue to setup the mock for Amazon Rekognition.
