@@ -37,6 +37,23 @@ Todo how to start the development
 
 ## Log book
 
+### 2021-05-11
+
+Continued with the unit tests and added assertions where dynamodb table is scanned after
+running the unit test. The test will assert that lambda has inserted item to the local
+dynamodb instance (mocked with moto).
+
+Decided to start migrating the image*processing_lambda to a step function which will
+have multiple stages. Initial thought is to have a pipeline that is triggered from S3
+Create event. Then step function will run procedure \_parse event* -> _detect labels_ ->
+create thumbnail -> create bounding box images -> store to metadata to DynamoDB. I was
+was able to create the first lambda which extracts the bucket name and object key from
+S3 event which is wrapped inside sqs event.
+
+Also added Makefile for improved dev experience. I think it is good way to document
+commands that are used during the deployment. Currently Makefile contains commands for
+creation of venv, cleaning the venv, deployment and synth.
+
 ### 2021-05-10 Continue fixing unit tests
 
 Today I will continue to setup the mock for Amazon Rekognition.
