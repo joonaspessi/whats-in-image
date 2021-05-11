@@ -40,7 +40,7 @@ def handler(event, context: LambdaContext):
             "S3Object": {"Bucket": image["bucket_name"], "Name": image["object_key"]}
         }
         try:
-            result = _detect_labels()
+            result = _detect_labels(params)
         except Exception as exception:
             logger.exception("AWS rekognition raised error")
             raise exception
@@ -52,8 +52,8 @@ def handler(event, context: LambdaContext):
 
 
 @tracer.capture_method
-def _detect_labels(max_labels=10, min_confidence=60):
-    labels = rekognition.detect_labels(Image=params, MaxLabels=10, MinConfidence=60)
+def _detect_labels(bucket, max_labels=10, min_confidence=60):
+    labels = rekognition.detect_labels(Image=bucket, MaxLabels=10, MinConfidence=60)
     logger.info(labels)
     return labels
 
