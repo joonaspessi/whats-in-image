@@ -79,9 +79,7 @@ def table(dynamodb):
 @pytest.fixture(scope="function")
 def bucket(s3):
     location = {"LocationConstraint": os.environ["REGION"]}
-    bucket = s3.create_bucket(
-        Bucket=os.environ["BUCKET"], CreateBucketConfiguration=location
-    )
+    s3.create_bucket(Bucket=os.environ["BUCKET"], CreateBucketConfiguration=location)
     s3.upload_file(
         "./tests/assets/test_image.png", os.environ["BUCKET"], "images/test_image.png"
     )
@@ -102,10 +100,17 @@ def test_image_processor_lambda(
 ):
     from image_processor_lambda import image_processor_lambda
 
-    response = image_processor_lambda.handler(s3_put_event, lambda_context)
-    assert len(response) == 1
+    image_processor_lambda.handler(s3_put_event, lambda_context)
+
+    response = table.scan()
+    items = response["Items"]
+    assert len(items) == 1
+    item = items[0]
+
     assert (
-        response[0]["bucket_name"]
+        item["bucket_name"]
         == "whatsinimagestack-whatsinimagesbucketf5245105-nmx1ow78uj0r"
     )
-    assert response[0]["object_key"] == "images/bike.png"
+    assert item["object_key"] == "images/bike.png"
+    assert item["type"] == "image"
+    assert json.loads(item["labels"]) == []
