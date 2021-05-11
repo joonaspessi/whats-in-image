@@ -9,6 +9,8 @@ from aws_cdk import (
     aws_sns,
     aws_sns_subscriptions,
     aws_sqs,
+    aws_stepfunctions,
+    aws_stepfunctions_tasks
 )
 from aws_cdk import core
 from aws_cdk import core as cdk
@@ -81,7 +83,7 @@ class WhatsInImageStack(cdk.Stack):
             environment={
                 "LOG_LEVEL": "INFO",
                 "POWERTOOLS_SERVICE_NAME": "whatsInImage",
-                "POWERTOOLS_METRICS_NAMESPACE": "ImageLabeling",
+                "POWERTOOLS_METRICS_NAMESPACE": "whatsInImage",
                 "TABLE": table.table_name,
             },
         )
@@ -97,4 +99,16 @@ class WhatsInImageStack(cdk.Stack):
         table.grant_read_write_data(image_processing_lambda)
         image_processing_lambda.add_to_role_policy(
             aws_iam.PolicyStatement(actions=["rekognition:*"], resources=["*"])
+        )
+
+        parse_event_lambda = aws_lambda_python.PythonFunction(
+            self,
+            "ParseEventLambdaHandler",
+            entry="lambdas/parse_event",
+            index="handler.py",
+            environment={
+                "LOG_LEVEL": "INFO",
+                "POWERTOOLS_SERVICE_NAME": "whatsInImage",
+                "POWERTOOLS_METRICS_NAMESPACE": "whatsInImage",
+            },
         )
