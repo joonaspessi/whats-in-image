@@ -34,6 +34,7 @@ setuptools.setup(
         "mypy==0.812",
         "pytest==6.2.3",
         "aws-lambda-powertools==1.15.0",
+        "ulid-py==1.1.0",
     ],
     python_requires=">=3.8",
     classifiers=[
