@@ -1,0 +1,21 @@
+{
+  "StartAt": "ParseEvent",
+  "States": {
+    "ParseEvent": {
+      "Next": "Image succesfully labeled",
+      "Catch": [
+        { "ErrorEquals": ["States.ALL"], "Next": "Could not label given input" }
+      ],
+      "Parameters": {
+        "FunctionName": "WhatsInImageStack-ParseEventLambdaHandler451D3F26-133405O0HS2E7",
+        "Payload.$": "$"
+      },
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "ResultPath": "$.ImageKeysResult"
+    },
+    "Image succesfully labeled": { "Type": "Succeed" },
+    "Could not label given input": { "Type": "Fail" }
+  },
+  "TimeoutSeconds": 60
+}

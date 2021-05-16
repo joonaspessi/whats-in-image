@@ -5,8 +5,12 @@ from unittest.mock import patch
 
 import boto3
 import pytest
-from botocore.stub import Stubber
-from moto import mock_dynamodb2, mock_s3
+from moto import mock_dynamodb2, mock_s3, mock_stepfunctions
+from moto.core import ACCOUNT_ID
+
+
+def _get_default_role():
+    return "arn:aws:iam::" + ACCOUNT_ID + ":role/unknown_sf_role"
 
 
 @pytest.fixture()
@@ -14,6 +18,13 @@ def s3_put_event():
     with open("events/s3-put.json") as file:
         event = json.load(file)
     return event
+
+
+@pytest.fixture()
+def stepfunctions_definition():
+    with open("tests/assets/stepfunctions.json") as file:
+        definition = json.load(file)
+    return json.dumps(definition)
 
 
 @pytest.fixture
@@ -42,12 +53,29 @@ def environment():
     os.environ["TABLE"] = "testing"
     os.environ["BUCKET"] = "testing"
     os.environ["REGION"] = "eu-west-1"
+    os.environ[
+        "STEPFUNCTION_ARN"
+    ] = "arn:aws:states:eu-west-1:474977396853:stateMachine:ImageLabeling4793DE56-FTlbFBcQMiTL"
 
 
 @pytest.fixture(scope="function")
 def s3(environment):
     with mock_s3():
         yield boto3.client("s3", region_name=os.environ["REGION"])
+
+
+@pytest.fixture()
+def stepfunctions(stepfunctions_definition):
+    with mock_stepfunctions():
+        stepfunctions = boto3.client("stepfunctions", region_name=os.environ["REGION"])
+        state_machine = stepfunctions.create_state_machine(
+            name="testing",
+            definition=stepfunctions_definition,
+            roleArn=_get_default_role(),
+        )
+
+        os.environ["STEPFUNCTION_ARN"] = state_machine["stateMachineArn"]
+        yield stepfunctions
 
 
 @pytest.fixture(scope="function")
@@ -127,3 +155,11 @@ def test_parse_event_lambda(s3_put_event, lambda_context):
             "object_key": "images/bike.png",
         }
     ]
+
+
+def test_run_stepfunction(s3_put_event, lambda_context, stepfunctions):
+    from lambdas.run_stepfunction import handler
+
+    response = handler.handler(s3_put_event, lambda_context)
+
+    assert response == True

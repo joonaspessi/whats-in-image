@@ -9,9 +9,9 @@ from aws_cdk import (
     aws_sns,
     aws_sns_subscriptions,
     aws_sqs,
-    aws_stepfunctions,
-    aws_stepfunctions_tasks
 )
+from aws_cdk import aws_stepfunctions as stepfunctions
+from aws_cdk import aws_stepfunctions_tasks as stepfunctions_tasks
 from aws_cdk import core
 from aws_cdk import core as cdk
 
@@ -90,13 +90,15 @@ class WhatsInImageStack(cdk.Stack):
 
         image_bucket.grant_read(image_processing_lambda)
 
-        image_created_queue.grant_consume_messages(image_processing_lambda)
-        image_processing_lambda.add_event_source(
-            aws_lambda_event_sources.SqsEventSource(
-                image_created_queue,
-            )
-        )
+        # image_created_queue.grant_consume_messages(image_processing_lambda)
+        # image_processing_lambda.add_event_source(
+        #     aws_lambda_event_sources.SqsEventSource(
+        #         image_created_queue,
+        #     )
+        # )
+
         table.grant_read_write_data(image_processing_lambda)
+
         image_processing_lambda.add_to_role_policy(
             aws_iam.PolicyStatement(actions=["rekognition:*"], resources=["*"])
         )
@@ -111,4 +113,103 @@ class WhatsInImageStack(cdk.Stack):
                 "POWERTOOLS_SERVICE_NAME": "whatsInImage",
                 "POWERTOOLS_METRICS_NAMESPACE": "whatsInImage",
             },
+            tracing=aws_lambda.Tracing.ACTIVE,
+            runtime=aws_lambda.Runtime.PYTHON_3_8,
         )
+
+        detect_labels_lambda = aws_lambda_python.PythonFunction(
+            self,
+            "DetectLabelsLambdaHandler",
+            entry="lambdas/detect_labels",
+            index="handler.py",
+            environment={
+                "LOG_LEVEL": "INFO",
+                "POWERTOOLS_SERVICE_NAME": "whatsInImage",
+                "POWERTOOLS_METRICS_NAMESPACE": "whatsInImage",
+            },
+            tracing=aws_lambda.Tracing.ACTIVE,
+            runtime=aws_lambda.Runtime.PYTHON_3_8,
+        )
+
+        image_bucket.grant_read(detect_labels_lambda)
+
+        detect_labels_lambda.add_to_role_policy(
+            aws_iam.PolicyStatement(actions=["rekognition:*"], resources=["*"])
+        )
+
+        store_dynamodb_lambda = aws_lambda_python.PythonFunction(
+            self,
+            "StoreDynamoDBLambdaHandler",
+            entry="lambdas/store_dynamodb",
+            index="handler.py",
+            environment={
+                "LOG_LEVEL": "INFO",
+                "POWERTOOLS_SERVICE_NAME": "whatsInImage",
+                "POWERTOOLS_METRICS_NAMESPACE": "whatsInImage",
+                "TABLE": table.table_name,
+            },
+        )
+
+        table.grant_read_write_data(store_dynamodb_lambda)
+
+        image_label_succeeded = stepfunctions.Succeed(self, "Image succesfully labeled")
+        image_label_failed = stepfunctions.Fail(self, "Could not label given input")
+
+        parse_event_step = stepfunctions.Task(
+            self,
+            "ParseEvent",
+            task=stepfunctions_tasks.RunLambdaTask(parse_event_lambda),
+            result_path="$.ImageKeysResult",
+        ).add_catch(image_label_failed)
+
+        detect_labels_step = stepfunctions.Task(
+            self,
+            "DetectLabels",
+            task=stepfunctions_tasks.RunLambdaTask(detect_labels_lambda),
+            result_path="$.DetectedLabels",
+        )
+
+        store_dynamodb_step = stepfunctions.Task(
+            self,
+            "StoreDynamoDB",
+            task=stepfunctions_tasks.RunLambdaTask(store_dynamodb_lambda),
+        )
+
+        defintion = (
+            stepfunctions.Chain.start(parse_event_step)
+            .next(detect_labels_step)
+            .next(store_dynamodb_step)
+            .next(image_label_succeeded)
+        )
+
+        image_labeling_stepfunction = stepfunctions.StateMachine(
+            self,
+            "ImageLabeling",
+            definition=defintion,
+            timeout=core.Duration.minutes(1),
+            tracing_enabled=True,
+        )
+
+        trigger_image_labeling_lambda = aws_lambda_python.PythonFunction(
+            self,
+            "TriggerImageLabelingStepFunction",
+            entry="lambdas/run_stepfunction",
+            index="handler.py",
+            environment={
+                "LOG_LEVEL": "INFO",
+                "POWERTOOLS_SERVICE_NAME": "whatsInImage",
+                "POWERTOOLS_METRICS_NAMESPACE": "whatsInImage",
+                "STEPFUNCTION_ARN": image_labeling_stepfunction.state_machine_arn,
+            },
+            tracing=aws_lambda.Tracing.ACTIVE,
+            runtime=aws_lambda.Runtime.PYTHON_3_8,
+        )
+
+        image_created_queue.grant_consume_messages(trigger_image_labeling_lambda)
+        trigger_image_labeling_lambda.add_event_source(
+            aws_lambda_event_sources.SqsEventSource(
+                image_created_queue,
+            )
+        )
+
+        image_labeling_stepfunction.grant_start_execution(trigger_image_labeling_lambda)
