@@ -74,35 +74,6 @@ class WhatsInImageStack(cdk.Stack):
             )
         )
 
-        image_processing_lambda = aws_lambda_python.PythonFunction(
-            self,
-            "ImageProcessingLambda",
-            entry="image_processor_lambda",
-            index="image_processor_lambda.py",
-            runtime=aws_lambda.Runtime.PYTHON_3_8,
-            environment={
-                "LOG_LEVEL": "INFO",
-                "POWERTOOLS_SERVICE_NAME": "whatsInImage",
-                "POWERTOOLS_METRICS_NAMESPACE": "whatsInImage",
-                "TABLE": table.table_name,
-            },
-        )
-
-        image_bucket.grant_read(image_processing_lambda)
-
-        # image_created_queue.grant_consume_messages(image_processing_lambda)
-        # image_processing_lambda.add_event_source(
-        #     aws_lambda_event_sources.SqsEventSource(
-        #         image_created_queue,
-        #     )
-        # )
-
-        table.grant_read_write_data(image_processing_lambda)
-
-        image_processing_lambda.add_to_role_policy(
-            aws_iam.PolicyStatement(actions=["rekognition:*"], resources=["*"])
-        )
-
         parse_event_lambda = aws_lambda_python.PythonFunction(
             self,
             "ParseEventLambdaHandler",
@@ -148,6 +119,8 @@ class WhatsInImageStack(cdk.Stack):
                 "POWERTOOLS_METRICS_NAMESPACE": "whatsInImage",
                 "TABLE": table.table_name,
             },
+            tracing=aws_lambda.Tracing.ACTIVE,
+            runtime=aws_lambda.Runtime.PYTHON_3_8,
         )
 
         table.grant_read_write_data(store_dynamodb_lambda)
@@ -167,13 +140,13 @@ class WhatsInImageStack(cdk.Stack):
             "DetectLabels",
             task=stepfunctions_tasks.RunLambdaTask(detect_labels_lambda),
             result_path="$.DetectedLabels",
-        )
+        ).add_catch(image_label_failed)
 
         store_dynamodb_step = stepfunctions.Task(
             self,
             "StoreDynamoDB",
             task=stepfunctions_tasks.RunLambdaTask(store_dynamodb_lambda),
-        )
+        ).add_catch(image_label_failed)
 
         defintion = (
             stepfunctions.Chain.start(parse_event_step)

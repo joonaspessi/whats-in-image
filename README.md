@@ -66,6 +66,16 @@ $(VENV)/bin/activate: requirements.txt
 	./$(VENV)/bin/pip install -r requirements.txt
 ```
 
+### 2021-05-16 Stepfunctions migration
+
+Started migration process from a single fat lambda to stepfunctions state machine.
+In this approach, the single lambda functionality is split to multiple lambas and their
+execution is orchestrated with AWS Step Functions.
+
+![stepfunctions](assets/stepfunctions.png)
+
+Visual feedback from the step function output is pretty nice, still having hard time to get proper developer experience. Local testing and getting the state machine working was quite painful.
+
 ### 2021-05-10 Continue fixing unit tests
 
 Today I will continue to setup the mock for Amazon Rekognition.
