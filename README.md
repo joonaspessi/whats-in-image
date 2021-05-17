@@ -37,6 +37,29 @@ Todo how to start the development
 
 ## Log book
 
+### 2021-05-17 Bounding box drawing
+
+Started implementing bounding box drawing logic to recognized images. Created new lambda
+that draws the bb to the image together with label and confidence.
+
+Got the basic drawing working by using Python Pillow library and following instructions
+from AWS [tutorial](https://docs.aws.amazon.com/rekognition/latest/dg/images-displaying-bounding-boxes.html).
+AWS tutorial was made for face detection, but it worked quite similar for object labels.
+
+![bounding_box](assets/bounding_box.png)
+
+Also refactored unit tests so that each unit-test file presents separate step in the statemachine.
+
+### 2021-05-16 Stepfunctions migration
+
+Started migration process from a single fat lambda to stepfunctions state machine.
+In this approach, the single lambda functionality is split to multiple lambas and their
+execution is orchestrated with AWS Step Functions.
+
+![stepfunctions](assets/stepfunctions.png)
+
+Visual feedback from the step function output is pretty nice, still having hard time to get proper developer experience. Local testing and getting the state machine working was quite painful.
+
 ### 2021-05-11
 
 Continued with the unit tests and added assertions where dynamodb table is scanned after
@@ -65,16 +88,6 @@ $(VENV)/bin/activate: requirements.txt
 	./$(VENV)/bin/python -m pip install --upgrade pip
 	./$(VENV)/bin/pip install -r requirements.txt
 ```
-
-### 2021-05-16 Stepfunctions migration
-
-Started migration process from a single fat lambda to stepfunctions state machine.
-In this approach, the single lambda functionality is split to multiple lambas and their
-execution is orchestrated with AWS Step Functions.
-
-![stepfunctions](assets/stepfunctions.png)
-
-Visual feedback from the step function output is pretty nice, still having hard time to get proper developer experience. Local testing and getting the state machine working was quite painful.
 
 ### 2021-05-10 Continue fixing unit tests
 

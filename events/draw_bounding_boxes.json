@@ -1,0 +1,240 @@
+{
+  "Records": [
+    {
+      "messageId": "1fb9371c-4a36-4548-986b-204432a508a5",
+      "receiptHandle": "AQEBcFJOrXtZm7Bp65PPWpXr6PIkNTRuh2qdqwkHe2aslHZpWUwYKlokaQ1wn27ebjdtqMraQ9jIfnhA+qtegwD+wYi++kgwbZguEZOaIm/D0yTj3h5a51sCGCP52vizsJuDLbsqFQuCeyx6333HSmsUcuqqxznTLRPLNd+xx3WwBQ8qOKZ6E+pW9NOkqwZkgHANi7QXhj6k6QrKM0ePw2QQrWndfo1zz8Tu02EWExogQdnPEc5RQB5HlRr4T/GwfrrNjMblQQndsJD7xX64G6keFx3QkUVhSoQ0MyXTSgY4guGmQ1KS2KvLqb9V2T6XWvD92WAmV3H2xORTCHmC6fw3z6AsquAf8gzRYLdDv5ZvYMlJElddvZB/trDt+d+/cFWt4cvaVWykSXuh+mFrSUp/fw==",
+      "body": "{\"Records\":[{\"eventVersion\":\"2.1\",\"eventSource\":\"aws:s3\",\"awsRegion\":\"eu-west-1\",\"eventTime\":\"2021-05-16T12:43:12.356Z\",\"eventName\":\"ObjectCreated:Put\",\"userIdentity\":{\"principalId\":\"AWS:AIDAW5FW35B2R76I4ELFB\"},\"requestParameters\":{\"sourceIPAddress\":\"176.93.245.12\"},\"responseElements\":{\"x-amz-request-id\":\"2MY77STMJ1SZGZZ2\",\"x-amz-id-2\":\"/geTzCFkeMVYv++bHdCLNXgkDBzumMD/aKkXcEdRXUTseQ+i/2SxHCrHnTyUILw73OaRQhk1i77IjQviZBkL/54UkFwxlD1z\"},\"s3\":{\"s3SchemaVersion\":\"1.0\",\"configurationId\":\"NWE3MGY2NTItODVjMy00MzcwLTlkNjgtY2JjYzZkMTNkMWYx\",\"bucket\":{\"name\":\"testing\",\"ownerIdentity\":{\"principalId\":\"A8NGPZONMN7H6\"},\"arn\":\"arn:aws:s3:::whatsinimagestack-whatsinimagesbucketf5245105-nmx1ow78uj0r\"},\"object\":{\"key\":\"images/01F5TK7AZHGYHMHBD1C299496F.png\",\"size\":631906,\"eTag\":\"8157e33437fa71cfc110a1d986c0eb85\",\"sequencer\":\"0060A11360B099A93F\"}}}]}",
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1621168998306",
+        "SenderId": "AIDAISMY7JYY5F7RTT6AO",
+        "ApproximateFirstReceiveTimestamp": "1621168998312"
+      },
+      "messageAttributes": {},
+      "md5OfBody": "794ae5a7f20f047787965d1918777e25",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:eu-west-1:474977396853:ImageCreatedQueue",
+      "awsRegion": "eu-west-1"
+    }
+  ],
+  "ImageKeysResult": {
+    "ExecutedVersion": "$LATEST",
+    "Payload": [
+      {
+        "bucket_name": "testing",
+        "object_key": "images/01F5TK7AZHGYHMHBD1C299496F.png"
+      }
+    ],
+    "SdkHttpMetadata": {
+      "AllHttpHeaders": {
+        "X-Amz-Executed-Version": ["$LATEST"],
+        "x-amzn-Remapped-Content-Length": ["0"],
+        "Connection": ["keep-alive"],
+        "x-amzn-RequestId": ["662b49ab-74c4-4b8c-abd2-a343a12ae3d7"],
+        "Content-Length": ["134"],
+        "Date": ["Sun, 16 May 2021 12:43:20 GMT"],
+        "X-Amzn-Trace-Id": [
+          "root=1-60a11366-4a0c2be5648b194e260bd0f3;parent=573f552015f0f057;sampled=1"
+        ],
+        "Content-Type": ["application/json"]
+      },
+      "HttpHeaders": {
+        "Connection": "keep-alive",
+        "Content-Length": "134",
+        "Content-Type": "application/json",
+        "Date": "Sun, 16 May 2021 12:43:20 GMT",
+        "X-Amz-Executed-Version": "$LATEST",
+        "x-amzn-Remapped-Content-Length": "0",
+        "x-amzn-RequestId": "662b49ab-74c4-4b8c-abd2-a343a12ae3d7",
+        "X-Amzn-Trace-Id": "root=1-60a11366-4a0c2be5648b194e260bd0f3;parent=573f552015f0f057;sampled=1"
+      },
+      "HttpStatusCode": 200
+    },
+    "SdkResponseMetadata": {
+      "RequestId": "662b49ab-74c4-4b8c-abd2-a343a12ae3d7"
+    },
+    "StatusCode": 200
+  },
+  "DetectedLabels": {
+    "ExecutedVersion": "$LATEST",
+    "Payload": [
+      {
+        "Labels": [
+          {
+            "Name": "Bicycle",
+            "Confidence": 99.9402847290039,
+            "Instances": [
+              {
+                "BoundingBox": {
+                  "Width": 0.28634390234947205,
+                  "Height": 0.2782232165336609,
+                  "Left": 0.5041135549545288,
+                  "Top": 0.24299083650112152
+                },
+                "Confidence": 99.9402847290039
+              }
+            ],
+            "Parents": [
+              {
+                "Name": "Vehicle"
+              },
+              {
+                "Name": "Transportation"
+              }
+            ]
+          },
+          {
+            "Name": "Bike",
+            "Confidence": 99.9402847290039,
+            "Instances": [],
+            "Parents": [
+              {
+                "Name": "Vehicle"
+              },
+              {
+                "Name": "Transportation"
+              }
+            ]
+          },
+          {
+            "Name": "Transportation",
+            "Confidence": 99.9402847290039,
+            "Instances": [],
+            "Parents": []
+          },
+          {
+            "Name": "Vehicle",
+            "Confidence": 99.9402847290039,
+            "Instances": [],
+            "Parents": [
+              {
+                "Name": "Transportation"
+              }
+            ]
+          },
+          {
+            "Name": "Person",
+            "Confidence": 99.22496032714844,
+            "Instances": [
+              {
+                "BoundingBox": {
+                  "Width": 0.16115763783454895,
+                  "Height": 0.27937594056129456,
+                  "Left": 0.5543560981750488,
+                  "Top": 0.14936049282550812
+                },
+                "Confidence": 99.22496032714844
+              }
+            ],
+            "Parents": []
+          },
+          {
+            "Name": "Human",
+            "Confidence": 99.22496032714844,
+            "Instances": [],
+            "Parents": []
+          },
+          {
+            "Name": "Wheel",
+            "Confidence": 99.19990539550781,
+            "Instances": [
+              {
+                "BoundingBox": {
+                  "Width": 0.10222310572862625,
+                  "Height": 0.13242465257644653,
+                  "Left": 0.686287522315979,
+                  "Top": 0.31833121180534363
+                },
+                "Confidence": 99.19990539550781
+              },
+              {
+                "BoundingBox": {
+                  "Width": 0.10338053107261658,
+                  "Height": 0.13185051083564758,
+                  "Left": 0.5092737078666687,
+                  "Top": 0.3926236927509308
+                },
+                "Confidence": 98.02079010009766
+              }
+            ],
+            "Parents": [
+              {
+                "Name": "Machine"
+              }
+            ]
+          },
+          {
+            "Name": "Machine",
+            "Confidence": 99.19990539550781,
+            "Instances": [],
+            "Parents": []
+          },
+          {
+            "Name": "Mountain Bike",
+            "Confidence": 91.5611343383789,
+            "Instances": [],
+            "Parents": [
+              {
+                "Name": "Bicycle"
+              },
+              {
+                "Name": "Vehicle"
+              },
+              {
+                "Name": "Transportation"
+              }
+            ]
+          },
+          {
+            "Name": "Slope",
+            "Confidence": 71.98186492919922,
+            "Instances": [],
+            "Parents": []
+          }
+        ],
+        "LabelModelVersion": "2.0",
+        "ResponseMetadata": {
+          "RequestId": "0a2f3a76-8f34-4898-8a42-4d87e3789567",
+          "HTTPStatusCode": 200,
+          "HTTPHeaders": {
+            "content-type": "application/x-amz-json-1.1",
+            "date": "Sun, 16 May 2021 12:43:21 GMT",
+            "x-amzn-requestid": "0a2f3a76-8f34-4898-8a42-4d87e3789567",
+            "content-length": "1635",
+            "connection": "keep-alive"
+          },
+          "RetryAttempts": 0
+        }
+      }
+    ],
+    "SdkHttpMetadata": {
+      "AllHttpHeaders": {
+        "X-Amz-Executed-Version": ["$LATEST"],
+        "x-amzn-Remapped-Content-Length": ["0"],
+        "Connection": ["keep-alive"],
+        "x-amzn-RequestId": ["80689731-6ec7-43de-aee4-9b9ceb5b1540"],
+        "Content-Length": ["2109"],
+        "Date": ["Sun, 16 May 2021 12:43:22 GMT"],
+        "X-Amzn-Trace-Id": [
+          "root=1-60a11366-4a0c2be5648b194e260bd0f3;parent=10e17022847d3b84;sampled=1"
+        ],
+        "Content-Type": ["application/json"]
+      },
+      "HttpHeaders": {
+        "Connection": "keep-alive",
+        "Content-Length": "2109",
+        "Content-Type": "application/json",
+        "Date": "Sun, 16 May 2021 12:43:22 GMT",
+        "X-Amz-Executed-Version": "$LATEST",
+        "x-amzn-Remapped-Content-Length": "0",
+        "x-amzn-RequestId": "80689731-6ec7-43de-aee4-9b9ceb5b1540",
+        "X-Amzn-Trace-Id": "root=1-60a11366-4a0c2be5648b194e260bd0f3;parent=10e17022847d3b84;sampled=1"
+      },
+      "HttpStatusCode": 200
+    },
+    "SdkResponseMetadata": {
+      "RequestId": "80689731-6ec7-43de-aee4-9b9ceb5b1540"
+    },
+    "StatusCode": 200
+  }
+}
