@@ -37,7 +37,23 @@ Todo how to start the development
 
 ## Log book
 
+### 2021-05-18 Saving bb labeled image to s3 and adding unit tests
+
+Added code to draw_bounding_box lambda for storing the image to S3. This worked nicely
+with upload_fileobj api where you can store in memory file to S3. Seems to work with
+local testing.
+
+After this included test case that runs the lambda and checks that the labeled object
+exists in the S3. There are no tests to check that the labels are correct. not sure how
+this could be tested anyway.
+
+Next thing is to start setting image resize, after that the statemachine should be ready.
+
 ### 2021-05-17 Bounding box drawing
+
++475 −153
+
+1h 10min
 
 Started implementing bounding box drawing logic to recognized images. Created new lambda
 that draws the bb to the image together with label and confidence.
