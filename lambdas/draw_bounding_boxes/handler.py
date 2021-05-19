@@ -27,6 +27,8 @@ def handler(event, _):
     labels = event["DetectedLabels"]["Payload"]
     keys = event["ImageKeysResult"]["Payload"]
 
+    bb_keys = []
+
     for key, labels in zip(keys, labels):
         s3_object = s3_resource.Object(key["bucket_name"], key["object_key"])
         s3_response = s3_object.get()
@@ -37,9 +39,10 @@ def handler(event, _):
 
         bucket = key["bucket_name"]
         image_id = path.basename(key["object_key"])
-        _save_image_to_s3(
-            image_with_labels, bucket=bucket, key=path.join("labeled", image_id)
-        )
+        object_key = path.join("labeled", image_id)
+        _save_image_to_s3(image_with_labels, bucket=bucket, key=object_key)
+        bb_keys.append({"bucket_name": bucket, "object_key": object_key})
+    return bb_keys
 
 
 def _draw_labels(input_image: Image, labels) -> Image:
@@ -70,7 +73,6 @@ def _draw_labels(input_image: Image, labels) -> Image:
 
 
 def _save_image_to_s3(image: Image, bucket, key):
-    image.show()
     in_mem_file = io.BytesIO()
     image.save(in_mem_file, format=image.format)
     in_mem_file.seek(0)

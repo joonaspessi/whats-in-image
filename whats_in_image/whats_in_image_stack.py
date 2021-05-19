@@ -108,6 +108,24 @@ class WhatsInImageStack(cdk.Stack):
             aws_iam.PolicyStatement(actions=["rekognition:*"], resources=["*"])
         )
 
+        draw_bounding_boxes_lambda = aws_lambda_python.PythonFunction(
+            self,
+            "DrawBoundingBoxesLambdaHandler",
+            entry="lambdas/draw_bounding_boxes",
+            index="handler.py",
+            environment={
+                "LOG_LEVEL": "INFO",
+                "POWERTOOLS_SERVICE_NAME": "WhatsInImage",
+                "POWERTOOLS_METRICS_NAMESPACE": "whatsInImage",
+            },
+            tracing=aws_lambda.Tracing.ACTIVE,
+            runtime=aws_lambda.Runtime.PYTHON_3_8,
+            timeout=core.Duration.seconds(120),
+            memory_size=1024,
+        )
+
+        image_bucket.grant_read_write(draw_bounding_boxes_lambda)
+
         store_dynamodb_lambda = aws_lambda_python.PythonFunction(
             self,
             "StoreDynamoDBLambdaHandler",
@@ -142,6 +160,14 @@ class WhatsInImageStack(cdk.Stack):
             result_path="$.DetectedLabels",
         ).add_catch(image_label_failed)
 
+        draw_bounding_boxes_step = stepfunctions.Task(
+            self,
+            "DrawBoundingBoxes",
+            task=stepfunctions_tasks.RunLambdaTask(draw_bounding_boxes_lambda),
+            result_path="$.BoundingBoxKeysResult",
+            timeout=core.Duration.seconds(120),
+        ).add_catch(image_label_failed)
+
         store_dynamodb_step = stepfunctions.Task(
             self,
             "StoreDynamoDB",
@@ -151,6 +177,7 @@ class WhatsInImageStack(cdk.Stack):
         defintion = (
             stepfunctions.Chain.start(parse_event_step)
             .next(detect_labels_step)
+            .next(draw_bounding_boxes_step)
             .next(store_dynamodb_step)
             .next(image_label_succeeded)
         )
@@ -159,7 +186,7 @@ class WhatsInImageStack(cdk.Stack):
             self,
             "ImageLabeling",
             definition=defintion,
-            timeout=core.Duration.minutes(1),
+            timeout=core.Duration.minutes(10),
             tracing_enabled=True,
         )
 

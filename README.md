@@ -37,7 +37,19 @@ Todo how to start the development
 
 ## Log book
 
+### 2021-05-19
+
+30min
+
+Added `draw_bounding_boxes` lambda to be part of the stepfunction flow. Initial timeout
+was not enough for the lambda so I had to increase the timeout and lambda memory amount.
+
+This would be good candidate for running the lambda optimization and try to find most
+optimal parameters for this lambda.
+
 ### 2021-05-18 Saving bb labeled image to s3 and adding unit tests
+
+1h 10min
 
 Added code to draw_bounding_box lambda for storing the image to S3. This worked nicely
 with upload_fileobj api where you can store in memory file to S3. Seems to work with
