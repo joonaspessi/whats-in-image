@@ -68,7 +68,9 @@ def _draw_labels(input_image: Image, labels) -> Image:
             )
 
             draw.line(points, fill="#00d400", width=2)
-            draw.text((left, top), f'{label["Name"]} : {label["Confidence"]}')
+            draw.text(
+                (left, top), f'{label["Name"]} : {round(label["Confidence"],1)} %'
+            )
     return image
 
 

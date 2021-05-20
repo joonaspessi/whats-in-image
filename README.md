@@ -1,41 +1,103 @@
 # Whats In Image
 
-_Whats In Image_ is a service that labels picture content from uploaded images and
-stores recognized image labels to database.
+_Whats In Image_ is a service that labels picture content from uploaded images. Service
+stores recognized image labels to a database and generates labeled image with bounding
+boxes and confidence information.
 
-In addition to image labels, _Whats In Image_-service creates thumbnails for
-uploaded images and draws recognition bounding boxes.
+![labeled_dog](assets/labeled_dog.png)
 
-Todo example here
+I
 
 ## Architecture
 
+The main image labeling functionality is built on top of Amazon Rekognition image labeling service.
+
+Users or APIs can download images to Amazon S3 bucket. Uploaded images must begin with object key
+`images/`.
+
+Uploaded image will trigger S3 `PUT event`, which is forwarded to Amazon SNS topic.
+Currently there is only single Amazon SQS queue subcribed to SNS topic but there could be multiple ones.
+
+Uploaded Images are queued to above mentioned SQS topic where processing lambda will feed
+the event to the AWS Step functions statemachine.
+
+AWS Step functions will handle the image processing in multiple steps:
+
+1. It parses the S3 PUT event which is wrapped inside Amazon SQS event.
+2. Get image labels and bounding boxes by uploaded S3 Bucket reference to Amazon Rekognition
+3. Makes a copy of the original image and draw bounding boxes with labels to the image.
+   Stores the image to the Amazon S3 Bucket with object key `labeled/<original_image_key>`
+4. Stores image metadata to dynamoDB. Labels, original image S3 key, labeled image S3 reference and createdBy timestamp
+
 ![Architecture Diagram](assets/architecture.png)
-Images created S3 bucket will trigger pipeline where stored image is labeled with AWS
-Rekognition. Acquired image labels are stored to the DynamoDB.
 
 ## Deployment
 
-Todo how to setup the environment
+Before you start, ensure that you have installed AWS CDK
+
+```
+npm install -g aws-cdk
+```
+
+Before start using CDK, you need to boostrap your environment
+
+```
+cdk bootstrap
+```
+
+After setting up, the deployment can be made with
+
+```
+make venv
+source .env/bin/activate
+make deploy
+```
 
 ## Development
 
-Todo how to start the development
+Setup your Python virtualenvironment with
 
-## Backlog
+```
+make venv
+source .env/bin/activate
+```
 
-- [ ] unit tests
-- [ ] integration tests
-- [ ] region as parameter for lambda
-- [ ] Step function instead of simple lamda
-- [ ] Makefile
-- [ ] Detect faces
-- [ ] Create image thumbnail
-- [ ] Bake images with rekognition bounding boxes and metadata
-- [ ] Telegram bot interface
-- [ ] CI/CD
+Run the unit tests
+
+```
+make test
+```
+
+I strongly recommend to deploy the aws infrastructure for development as it makes much
+more easier to debug and work with step function.
+
+After deploying the environment can be easily tested by uploading files to your created
+S3 Bucket with aws-cli
+
+```
+aws s3 cp ${your_image}.png s3://whatsinimagestack-whatsinimagesbucket<your_bucket_identifier>/images/${your_image}.png
+```
+
+Then checking the labels from dynamoDB
+
+```
+python scripts/cli.py query --table ${your_dynamodb_table_name} --id ${your_image}
+```
+
+Finally you can download the labeled image
+
+```
+aws s3 cp s3://whatsinimagestack-whatsinimagesbucket<your_bucket_identifier>/labeled/${your_image}.png ${your_image}_labeled.png
+```
 
 ## Log book
+
+### 2021-05-20
+
+1h
+
+Mainly improved documentation. Improved confidence number rendering to labeled image by
+rounding the percentage to single decimal.
 
 ### 2021-05-19
 
